@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" fill="none">
+  <path d="M60 700 H740" stroke="#0F172A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M100 700 V560 H280 V480 H520 V560 H700 V700" stroke="#0F172A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="300" y="500" width="80" height="50" rx="4" stroke="#0F172A" stroke-width="3"/>
+  <rect x="420" y="500" width="80" height="50" rx="4" stroke="#0F172A" stroke-width="3"/>
+  <circle cx="220" cy="710" r="48" stroke="#0F172A" stroke-width="5"/>
+  <circle cx="220" cy="710" r="22" stroke="#0F172A" stroke-width="3"/>
+  <circle cx="580" cy="710" r="48" stroke="#0F172A" stroke-width="5"/>
+  <circle cx="580" cy="710" r="22" stroke="#0F172A" stroke-width="3"/>
+  <path d="M280 480 Q400 420 520 480" stroke="#0F172A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="160" y="580" width="40" height="40" rx="4" stroke="#0F172A" stroke-width="3"/>
+  <ellipse cx="400" cy="860" rx="240" ry="35" stroke="#0F172A" stroke-width="3"/>
+  <path d="M120 300 H200 V380 H120 Z" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M600 260 H700 V360 H600 Z" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

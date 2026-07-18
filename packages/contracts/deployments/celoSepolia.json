@@ -1,0 +1,15 @@
+{
+  "network": "celoSepolia",
+  "chainId": 11142220,
+  "proxy": "0x2839BA1eEcC8d397A6A776015506c9510Ee9037a",
+  "implementation": "0x73cfF297092D1B87c02566DcAc68d0c1957599de",
+  "usdc": "0xd077A400968890Eacc75cdc901F0356c943e4fDb",
+  "treasury": "0xEa5dE7040787a10Da348622D9298079D06dBE804",
+  "rewardSigner": "0xEa5dE7040787a10Da348622D9298079D06dBE804",
+  "owner": "0xEa5dE7040787a10Da348622D9298079D06dBE804",
+  "deployedAt": "2026-07-18T12:19:42.139Z",
+  "note": "Proxy verified on-chain after OZ getImplementationAddress false negative",
+  "usdt": "0xd077A400968890Eacc75cdc901F0356c943e4fDb",
+  "paymentToken": "USDT",
+  "paymentTokenUpdatedAt": "2026-07-18T12:32:29.755Z"
+}

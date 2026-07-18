@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" fill="none">
+  <path d="M80 640 H720" stroke="#0F172A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M120 640 Q140 520 220 500 H520 Q640 510 700 620 L680 640" stroke="#0F172A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M220 500 Q260 420 360 410 H480 Q560 420 580 500" stroke="#0F172A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="300" y="440" width="80" height="40" rx="6" stroke="#0F172A" stroke-width="3"/>
+  <rect x="420" y="440" width="80" height="40" rx="6" stroke="#0F172A" stroke-width="3"/>
+  <circle cx="240" cy="650" r="55" stroke="#0F172A" stroke-width="5"/>
+  <circle cx="240" cy="650" r="28" stroke="#0F172A" stroke-width="3"/>
+  <circle cx="580" cy="650" r="55" stroke="#0F172A" stroke-width="5"/>
+  <circle cx="580" cy="650" r="28" stroke="#0F172A" stroke-width="3"/>
+  <path d="M700 620 L760 580" stroke="#0F172A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M140 560 H200" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="400" cy="820" rx="220" ry="40" stroke="#0F172A" stroke-width="3"/>
+</svg>

@@ -1,0 +1,27 @@
+{
+  "name": "@paintadom/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "hardhat compile && node scripts/export-abi.js",
+    "compile": "hardhat compile && node scripts/export-abi.js",
+    "test": "hardhat test",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network celoSepolia",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network celo",
+    "upgrade:sepolia": "hardhat run scripts/upgrade.js --network celoSepolia",
+    "upgrade:mainnet": "hardhat run scripts/upgrade.js --network celo",
+    "set-payment-token:sepolia": "hardhat run scripts/set-payment-token.js --network celoSepolia",
+    "set-payment-token:mainnet": "hardhat run scripts/set-payment-token.js --network celo",
+    "clean": "hardhat clean",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.2.0",
+    "@openzeppelin/contracts-upgradeable": "^5.2.0",
+    "@openzeppelin/hardhat-upgrades": "^3.9.0",
+    "dotenv": "^16.4.7",
+    "hardhat": "^2.22.18",
+    "typescript": "^5.2.2"
+  }
+}

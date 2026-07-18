@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" fill="none">
+  <ellipse cx="400" cy="620" rx="160" ry="120" stroke="#0F172A" stroke-width="5"/>
+  <path d="M280 520 Q260 420 300 380 Q340 360 360 420" stroke="#0F172A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M520 520 Q540 420 500 380 Q460 360 440 420" stroke="#0F172A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="400" cy="480" rx="110" ry="95" stroke="#0F172A" stroke-width="5"/>
+  <circle cx="370" cy="470" r="8" fill="#0F172A"/>
+  <circle cx="430" cy="470" r="8" fill="#0F172A"/>
+  <path d="M400 490 Q415 510 400 520" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M400 520 Q380 540 360 530" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M400 520 Q420 540 440 530" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M250 620 Q200 700 240 780" stroke="#0F172A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M550 620 Q600 700 560 780" stroke="#0F172A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M320 740 Q400 800 480 740" stroke="#0F172A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="400" cy="860" rx="200" ry="40" stroke="#0F172A" stroke-width="3"/>
+  <path d="M120 300 Q200 220 280 300" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M520 280 Q600 200 680 280" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
