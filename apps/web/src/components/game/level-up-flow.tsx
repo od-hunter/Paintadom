@@ -8,7 +8,7 @@ import { LevelMapPopup } from "@/components/game/level-map-popup";
 import { useGameStore } from "@/store/game-store";
 import { useChainEconomy } from "@/hooks/use-chain-economy";
 
-type Phase = "celebrate" | "map" | "rewards" | "done";
+type Phase = "celebrate" | "rewards" | "map" | "done";
 
 const LEVEL_GIFTS: Record<
   number,
@@ -25,21 +25,25 @@ const LEVEL_GIFTS: Record<
 };
 
 /**
- * Sequence after finishing a gallery wing:
- * celebrate → animated map brush move → reward popups → done
+ * After finishing a gallery wing:
+ * celebrate (auto) → map → tap next kingdom → sign & claim → unlock
  */
 export function LevelUpFlow({
   open,
   completedLevel,
   nextLevel,
   onFinished,
+  startAtMap = false,
 }: {
   open: boolean;
   completedLevel: number;
   nextLevel: number;
   onFinished: () => void;
+  /** Skip congrats when resuming an unfinished level-up */
+  startAtMap?: boolean;
 }) {
   const buySparks = useGameStore((s) => s.buySparks);
+  const confirmLevelAdvance = useGameStore((s) => s.confirmLevelAdvance);
   const [phase, setPhase] = useState<Phase>("celebrate");
   const [rewardIdx, setRewardIdx] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -63,15 +67,30 @@ export function LevelUpFlow({
       setErr(null);
       return;
     }
-    setPhase("celebrate");
-    if (chainEnabled && playerAddress) {
-      void commitProgress(nextLevel).catch(() => {
-        /* non-blocking — settings can retry */
-      });
-    }
-  }, [open, completedLevel, nextLevel, chainEnabled, playerAddress, commitProgress]);
+    setPhase(startAtMap ? "map" : "celebrate");
+  }, [open, completedLevel, nextLevel, startAtMap]);
+
+  /** Brief congrats, then open the kingdom map */
+  useEffect(() => {
+    if (!open || phase !== "celebrate") return;
+    const t = window.setTimeout(() => setPhase("map"), 3200);
+    return () => window.clearTimeout(t);
+  }, [open, phase]);
 
   if (!open) return null;
+
+  const finishAndAdvance = async () => {
+    if (chainEnabled && playerAddress) {
+      try {
+        await commitProgress(nextLevel);
+      } catch {
+        /* settings can retry */
+      }
+    }
+    confirmLevelAdvance();
+    setPhase("done");
+    onFinished();
+  };
 
   const claimGift = async () => {
     const gift = gifts[rewardIdx];
@@ -87,25 +106,26 @@ export function LevelUpFlow({
         const tx = await claim(gift.sparks, "level_up");
         if (!tx || !("hash" in tx) || !tx.hash) {
           setErr(
-            ("error" in tx && tx.error) || "Claim cancelled or failed."
+            ("error" in tx && tx.error) || "Sign & claim failed — try again."
           );
           return;
         }
       } else {
         buySparks(gift.sparks);
       }
+
       if (rewardIdx + 1 < gifts.length) {
         setRewardIdx((i) => i + 1);
-      } else {
-        setPhase("done");
-        onFinished();
+        return;
       }
+
+      await finishAndAdvance();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
       setErr(
         /reject|denied|cancel/i.test(msg)
           ? "Signature cancelled in wallet."
-          : "On-chain claim failed."
+          : "Sign & claim failed — try again."
       );
     } finally {
       setBusy(false);
@@ -155,40 +175,13 @@ export function LevelUpFlow({
               Level {completedLevel} Completed!
             </h2>
             <p className="relative mt-2 text-sm font-bold text-white/95">
-              {gallery.name} is full — the path opens!
+              {gallery.name} is full — amazing work!
             </p>
-            {chainEnabled && (
-              <p className="relative mt-2 text-[11px] font-black text-white/90">
-                Level progress signed on Celo
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() => setPhase("map")}
-              className="relative mt-5 w-full rounded-2xl border-b-[5px] border-violet-900 bg-gradient-to-b from-white to-violet-100 py-3 font-display text-lg font-black text-violet-800"
-            >
-              See the map
-            </button>
+            <p className="relative mt-2 text-xs font-bold text-white/90">
+              Opening the kingdom map…
+            </p>
           </motion.div>
         </motion.div>
-      )}
-
-      {phase === "map" && (
-        <LevelMapPopup
-          key="map"
-          open
-          playerLevel={nextLevel}
-          animateFrom={completedLevel}
-          animateTo={nextLevel}
-          tapToContinueLevel={nextLevel}
-          onTapContinue={() => {
-            setRewardIdx(0);
-            setPhase("rewards");
-          }}
-          onClose={() => {
-            /* stay on map until they tap the next level */
-          }}
-        />
       )}
 
       {phase === "rewards" && gifts[rewardIdx] && (
@@ -208,6 +201,9 @@ export function LevelUpFlow({
             <h3 className="mt-2 font-display text-2xl font-black text-amber-950">
               Level {nextLevel} Gift
             </h3>
+            <p className="mt-1 text-xs font-bold text-amber-900/70">
+              Gift {rewardIdx + 1} of {gifts.length}
+            </p>
             <p className="mt-1 font-display text-lg font-black text-orange-800">
               {gifts[rewardIdx].title}
             </p>
@@ -235,6 +231,21 @@ export function LevelUpFlow({
             </button>
           </motion.div>
         </motion.div>
+      )}
+
+      {phase === "map" && (
+        <LevelMapPopup
+          key="map"
+          open
+          playerLevel={completedLevel}
+          tapToContinueLevel={nextLevel}
+          onTapContinue={() => {
+            setRewardIdx(0);
+            setErr(null);
+            setPhase("rewards");
+          }}
+          dismissable={false}
+        />
       )}
     </AnimatePresence>
   );

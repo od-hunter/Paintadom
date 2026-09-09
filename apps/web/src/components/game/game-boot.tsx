@@ -75,9 +75,14 @@ export function GameBoot({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return;
+    // New / reset users go straight to sign-in — no 5s intro wait
+    if (!hasOnboarded) {
+      setShowSplash(false);
+      return;
+    }
     const hide = window.setTimeout(() => setShowSplash(false), SPLASH_MS);
     return () => window.clearTimeout(hide);
-  }, [hydrated]);
+  }, [hydrated, hasOnboarded]);
 
   return (
     <>

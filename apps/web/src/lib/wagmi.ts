@@ -2,6 +2,7 @@ import { http, createConfig, type CreateConnectorFn } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { celo, celoSepolia } from "wagmi/chains";
 import { getConfiguredChainId } from "@/lib/contracts/paintadom-game";
+import { publicCeloRpc } from "@/lib/chain/rpc-urls";
 
 /** Prefer the configured game chain so wallet default matches the deployed proxy */
 const configuredId = getConfiguredChainId();
@@ -43,13 +44,11 @@ function buildConnectors(): CreateConnectorFn[] {
             network:
               configuredId === celoSepolia.id
                 ? {
-                    rpcUrl:
-                      process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC ||
-                      "https://forno.celo-sepolia.celo-testnet.org",
+                    rpcUrl: publicCeloRpc(celoSepolia.id),
                     chainId: celoSepolia.id,
                   }
                 : {
-                    rpcUrl: "https://forno.celo.org",
+                    rpcUrl: publicCeloRpc(celo.id),
                     chainId: celo.id,
                   },
           },
@@ -68,8 +67,8 @@ export const wagmiConfig = createConfig({
   chains,
   connectors: buildConnectors(),
   transports: {
-    [celo.id]: http(),
-    [celoSepolia.id]: http(),
+    [celo.id]: http(publicCeloRpc(celo.id)),
+    [celoSepolia.id]: http(publicCeloRpc(celoSepolia.id)),
   },
   ssr: true,
 });

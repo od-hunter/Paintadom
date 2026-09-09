@@ -16,12 +16,11 @@ import {
   paintadomGameEnabled,
   REWARD_SPARKS,
 } from "@/lib/contracts/paintadom-game";
+import { serverCeloRpc } from "@/lib/chain/rpc-urls";
 
 const RPC: Record<number, string> = {
-  [celo.id]: process.env.CELO_RPC || "https://forno.celo.org",
-  [celoSepolia.id]:
-    process.env.CELO_SEPOLIA_RPC ||
-    "https://forno.celo-sepolia.celo-testnet.org",
+  [celo.id]: serverCeloRpc(celo.id),
+  [celoSepolia.id]: serverCeloRpc(celoSepolia.id),
 };
 
 export function getChainId(): number {

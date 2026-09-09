@@ -29,24 +29,26 @@ export function LevelMapPopup({
   playerLevel,
   animateFrom,
   animateTo,
-  /** When set, tapping this level continues the level-up flow */
   tapToContinueLevel,
   onTapContinue,
   onBack,
+  dismissable = true,
 }: {
   open: boolean;
-  onClose: () => void;
+  onClose?: () => void;
   playerLevel: number;
   animateFrom?: number;
   animateTo?: number;
   tapToContinueLevel?: number;
   onTapContinue?: () => void;
   onBack?: () => void;
+  dismissable?: boolean;
 }) {
   const [brushLevel, setBrushLevel] = useState(playerLevel);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const PATH = buildPath(GALLERIES.length);
   const mapH = 180 + GALLERIES.length * 140;
+  const canDismiss = dismissable !== false;
 
   useEffect(() => {
     if (!open) return;
@@ -75,7 +77,7 @@ export function LevelMapPopup({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={canDismiss ? onClose : undefined}
         >
           <motion.div
             role="dialog"
@@ -100,14 +102,16 @@ export function LevelMapPopup({
                 ‹
               </button>
             )}
-            <button
-              type="button"
-              onClick={onClose}
-              className="absolute right-2.5 top-2.5 z-30 flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-white bg-gradient-to-b from-red-400 to-red-600 text-xl font-black text-white shadow-[0_4px_0_#991b1b]"
-              aria-label="Close"
-            >
-              ×
-            </button>
+            {canDismiss && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="absolute right-2.5 top-2.5 z-30 flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-white bg-gradient-to-b from-red-400 to-red-600 text-xl font-black text-white shadow-[0_4px_0_#991b1b]"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            )}
 
             <div
               ref={scrollerRef}
@@ -140,7 +144,7 @@ export function LevelMapPopup({
                   style={{ textShadow: "0 3px 0 rgba(0,0,0,0.55)" }}
                 >
                   {tapToContinueLevel
-                    ? `Tap Level ${tapToContinueLevel} to continue`
+                    ? `Tap Level ${tapToContinueLevel} to enter`
                     : "Gallery Path"}
                 </p>
                 <p className="mt-0.5 text-xs font-bold text-sky-100">

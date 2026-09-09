@@ -1,23 +1,204 @@
 import type { ColoringPage } from "@/types/game";
 import { GALLERIES } from "@/data/buildings";
 
-/** Base art templates reused across levels — all stroke line-art (no filled color thumbs) */
-const ART = [
-  { slug: "moonlit-castle", difficulty: "medium" as const, thumb: "/pages/moonlit-castle.svg" },
-  { slug: "dragon-valley", difficulty: "hard" as const, thumb: "/pages/dragon-valley.svg" },
-  { slug: "enchanted-forest", difficulty: "medium" as const, thumb: "/pages/enchanted-forest.svg" },
-  { slug: "harbor-dawn", difficulty: "easy" as const, thumb: "/pages/harbor-dawn.svg" },
-  { slug: "sky-temple", difficulty: "hard" as const, thumb: "/pages/sky-temple.svg" },
-  { slug: "fox-meadow", difficulty: "easy" as const, thumb: "/pages/fox-meadow.svg" },
-  { slug: "castle-dusk", difficulty: "medium" as const, thumb: "/pages/moonlit-castle.svg" },
-  { slug: "valley-dawn", difficulty: "easy" as const, thumb: "/pages/dragon-valley.svg" },
-  { slug: "harbor-glow", difficulty: "medium" as const, thumb: "/pages/harbor-dawn.svg" },
-  { slug: "forest-light", difficulty: "easy" as const, thumb: "/pages/enchanted-forest.svg" },
+/** Nature, lifestyle & cozy themes — quick sessions (~5–8 min) */
+export type DrawingTheme = "nature" | "lifestyle" | "pets" | "whimsy";
+
+export type DrawingTemplate = {
+  slug: string;
+  title: string;
+  theme: DrawingTheme;
+  difficulty: ColoringPage["difficulty"];
+  /** Rough minutes for a casual player */
+  estMinutes: number;
+  lineArt: string;
+  thumb: string;
+};
+
+const DRAWING_CATALOG: DrawingTemplate[] = [
+  {
+    slug: "potted-flower",
+    title: "Sunny Pot",
+    theme: "nature",
+    difficulty: "easy",
+    estMinutes: 5,
+    lineArt: "/pages/lifestyle/potted-flower.png",
+    thumb: "/pages/lifestyle/potted-flower.png",
+  },
+  {
+    slug: "twin-flowers",
+    title: "Twin Blooms",
+    theme: "nature",
+    difficulty: "easy",
+    estMinutes: 6,
+    lineArt: "/pages/lifestyle/twin-flowers.png",
+    thumb: "/pages/lifestyle/twin-flowers.png",
+  },
+  {
+    slug: "happy-puppy",
+    title: "Happy Pup",
+    theme: "pets",
+    difficulty: "easy",
+    estMinutes: 6,
+    lineArt: "/pages/lifestyle/happy-puppy.png",
+    thumb: "/pages/lifestyle/happy-puppy.png",
+  },
+  {
+    slug: "cute-kitten",
+    title: "Kitten Friend",
+    theme: "pets",
+    difficulty: "easy",
+    estMinutes: 6,
+    lineArt: "/pages/lifestyle/cute-kitten.png",
+    thumb: "/pages/lifestyle/cute-kitten.png",
+  },
+  {
+    slug: "gorilla-forest",
+    title: "Forest Gorilla",
+    theme: "nature",
+    difficulty: "easy",
+    estMinutes: 7,
+    lineArt: "/pages/lifestyle/gorilla-forest.png",
+    thumb: "/pages/lifestyle/gorilla-forest.png",
+  },
+  {
+    slug: "jungle-monkey",
+    title: "Jungle Monkey",
+    theme: "nature",
+    difficulty: "easy",
+    estMinutes: 7,
+    lineArt: "/pages/lifestyle/jungle-monkey.png",
+    thumb: "/pages/lifestyle/jungle-monkey.png",
+  },
+  {
+    slug: "garden-elephant",
+    title: "Garden Walk",
+    theme: "nature",
+    difficulty: "easy",
+    estMinutes: 7,
+    lineArt: "/pages/lifestyle/garden-elephant.png",
+    thumb: "/pages/lifestyle/garden-elephant.png",
+  },
+  {
+    slug: "safari-giraffe",
+    title: "Sunny Giraffe",
+    theme: "nature",
+    difficulty: "easy",
+    estMinutes: 6,
+    lineArt: "/pages/lifestyle/safari-giraffe.png",
+    thumb: "/pages/lifestyle/safari-giraffe.png",
+  },
+  {
+    slug: "bunny-garden",
+    title: "Garden Bunny",
+    theme: "nature",
+    difficulty: "easy",
+    estMinutes: 7,
+    lineArt: "/pages/lifestyle/bunny-garden.png",
+    thumb: "/pages/lifestyle/bunny-garden.png",
+  },
+  {
+    slug: "cloud-unicorn",
+    title: "Cloud Unicorn",
+    theme: "whimsy",
+    difficulty: "easy",
+    estMinutes: 6,
+    lineArt: "/pages/lifestyle/cloud-unicorn.png",
+    thumb: "/pages/lifestyle/cloud-unicorn.png",
+  },
+  {
+    slug: "picnic-bear",
+    title: "Picnic Day",
+    theme: "lifestyle",
+    difficulty: "medium",
+    estMinutes: 7,
+    lineArt: "/pages/lifestyle/picnic-bear.png",
+    thumb: "/pages/lifestyle/picnic-bear.png",
+  },
+  {
+    slug: "duckling-bench",
+    title: "Bench Treat",
+    theme: "lifestyle",
+    difficulty: "medium",
+    estMinutes: 7,
+    lineArt: "/pages/lifestyle/duckling-bench.png",
+    thumb: "/pages/lifestyle/duckling-bench.png",
+  },
+  {
+    slug: "beach-bear",
+    title: "Beach Day",
+    theme: "lifestyle",
+    difficulty: "medium",
+    estMinutes: 7,
+    lineArt: "/pages/lifestyle/beach-bear.png",
+    thumb: "/pages/lifestyle/beach-bear.png",
+  },
+  {
+    slug: "sunflower-rainbow",
+    title: "Sun & Rainbow",
+    theme: "nature",
+    difficulty: "medium",
+    estMinutes: 8,
+    lineArt: "/pages/lifestyle/sunflower-rainbow.png",
+    thumb: "/pages/lifestyle/sunflower-rainbow.png",
+  },
+  {
+    slug: "banana-rocker",
+    title: "Banana Ride",
+    theme: "whimsy",
+    difficulty: "medium",
+    estMinutes: 7,
+    lineArt: "/pages/lifestyle/banana-rocker.png",
+    thumb: "/pages/lifestyle/banana-rocker.png",
+  },
+  {
+    slug: "flower-girl",
+    title: "Flower Crown",
+    theme: "lifestyle",
+    difficulty: "medium",
+    estMinutes: 8,
+    lineArt: "/pages/lifestyle/flower-girl.png",
+    thumb: "/pages/lifestyle/flower-girl.png",
+  },
+  {
+    slug: "dancing-girl",
+    title: "Dance Break",
+    theme: "lifestyle",
+    difficulty: "medium",
+    estMinutes: 8,
+    lineArt: "/pages/lifestyle/dancing-girl.png",
+    thumb: "/pages/lifestyle/dancing-girl.png",
+  },
+  {
+    slug: "mermaid-cove",
+    title: "Mermaid Cove",
+    theme: "whimsy",
+    difficulty: "hard",
+    estMinutes: 8,
+    lineArt: "/pages/lifestyle/mermaid-cove.png",
+    thumb: "/pages/lifestyle/mermaid-cove.png",
+  },
+  {
+    slug: "balloon-bear",
+    title: "Balloon Day",
+    theme: "whimsy",
+    difficulty: "hard",
+    estMinutes: 8,
+    lineArt: "/pages/lifestyle/balloon-bear.png",
+    thumb: "/pages/lifestyle/balloon-bear.png",
+  },
 ];
 
-const TITLE_SEEDS = [
-  "Moonlit", "Dragon", "Enchanted", "Harbor", "Sky", "Fox", "Castle", "Valley", "Coral", "Forest",
-];
+const PAGES_PER_LEVEL = 10;
+const LEVEL_COUNT = 15;
+
+/** Rotate catalog so each wing feels fresh — no repeated slug within a level */
+function templatesForLevel(level: number): DrawingTemplate[] {
+  const offset = ((level - 1) * 4) % DRAWING_CATALOG.length;
+  return Array.from({ length: PAGES_PER_LEVEL }, (_, i) => {
+    return DRAWING_CATALOG[(offset + i) % DRAWING_CATALOG.length];
+  });
+}
 
 /**
  * Paint rewards stay below gallery hang costs so painting alone can't fill the wall.
@@ -35,26 +216,17 @@ function sparksForLevel(level: number): number[] {
   return raw;
 }
 
-const LINE_PAGES = [
-  "/pages/moonlit-castle.svg",
-  "/pages/dragon-valley.svg",
-  "/pages/enchanted-forest.svg",
-  "/pages/harbor-dawn.svg",
-  "/pages/sky-temple.svg",
-  "/pages/fox-meadow.svg",
-];
-
-/** Freestyle catalog — pick any stroke drawing, paint with no rewards */
-export const FREESTYLE_DRAWINGS = ART.map((art, i) => ({
-  id: `free-${art.slug}`,
-  slug: art.slug,
-  title: TITLE_SEEDS[i] ?? art.slug,
-  thumbnail: art.thumb,
-  lineArt: LINE_PAGES[i % LINE_PAGES.length],
-  difficulty: art.difficulty,
+/** Freestyle — full library, paint freely with no Sparks */
+export const FREESTYLE_DRAWINGS = DRAWING_CATALOG.map((d) => ({
+  id: `free-${d.slug}`,
+  slug: d.slug,
+  title: d.title,
+  thumbnail: d.thumb,
+  lineArt: d.lineArt,
+  difficulty: d.difficulty,
+  theme: d.theme,
+  estMinutes: d.estMinutes,
 }));
-
-const LEVEL_COUNT = 15;
 
 /** 10 drawings per gallery level × 15 levels */
 export const COLORING_PAGES: ColoringPage[] = Array.from(
@@ -62,14 +234,15 @@ export const COLORING_PAGES: ColoringPage[] = Array.from(
   (_, li) => {
     const level = li + 1;
     const rewards = sparksForLevel(level);
-    return ART.map((art, i) => ({
+    const templates = templatesForLevel(level);
+    return templates.map((art, i) => ({
       id: `l${level}-${art.slug}`,
-      title: `${TITLE_SEEDS[i]} ${level > 1 ? `L${level}` : ""}`.trim() || art.slug,
+      title: level > 1 ? `${art.title} · L${level}` : art.title,
       difficulty: art.difficulty,
       sparksReward: rewards[i],
       kingdomReward: Math.round(rewards[i] * 0.6),
       thumbnail: art.thumb,
-      lineArt: LINE_PAGES[i % LINE_PAGES.length],
+      lineArt: art.lineArt,
       level,
     }));
   }
@@ -118,4 +291,8 @@ export function getPlayPageId(
 
 export function difficultyMultiplier(d: ColoringPage["difficulty"]) {
   return d === "hard" ? 1.5 : d === "medium" ? 1.2 : 1;
+}
+
+export function getDrawingCatalog() {
+  return DRAWING_CATALOG;
 }

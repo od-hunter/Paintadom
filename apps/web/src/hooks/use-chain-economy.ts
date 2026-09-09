@@ -19,6 +19,7 @@ import {
   paintadomGameAbi,
   paintadomGameEnabled,
 } from "@/lib/contracts/paintadom-game";
+import { publicCeloRpc } from "@/lib/chain/rpc-urls";
 import { useGameStore } from "@/store/game-store";
 import {
   accountFromEmail,
@@ -38,10 +39,8 @@ export type ClaimReason =
   | "manual";
 
 const RPC: Record<number, string> = {
-  [celo.id]: process.env.NEXT_PUBLIC_CELO_RPC || "https://forno.celo.org",
-  [celoSepolia.id]:
-    process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC ||
-    "https://forno.celo-sepolia.celo-testnet.org",
+  [celo.id]: publicCeloRpc(celo.id),
+  [celoSepolia.id]: publicCeloRpc(celoSepolia.id),
 };
 
 function chainFor(id: number): Chain {
@@ -61,6 +60,9 @@ async function fetchOnChainBalance(address: string, chainId: number) {
 }
 
 function friendlyChainError(raw: string): string {
+  if (/magic rpc|failed to fetch|-32603/i.test(raw)) {
+    return "Magic wallet couldn't reach the network. Check your connection, disable ad blockers for this site, and confirm localhost:3000 is in Magic Dashboard → Allowed Origins.";
+  }
   if (/claimNonce|returned no data|is not a contract/i.test(raw)) {
     return "Couldn’t reach the game contract on Celo Sepolia. Refresh and try again.";
   }
@@ -129,9 +131,13 @@ export function useChainEconomy() {
         throw new Error("On-chain game contract not configured");
       }
 
+      const sessionEmail = getEmailWalletSession() || email?.trim().toLowerCase();
+      const localAccount = sessionEmail
+        ? accountFromEmail(sessionEmail)
+        : null;
+
       const signerAddress =
-        (isConnected && wagmiAddress) ||
-        (email ? accountFromEmail(email.trim().toLowerCase()).address : null);
+        (isConnected && wagmiAddress) || localAccount?.address || null;
 
       if (signerAddress) {
         const gasRes = await fetch("/api/chain/ensure-gas", {
@@ -148,58 +154,79 @@ export function useChainEconomy() {
         }
       }
 
-      // Prefer live wagmi connection (MiniPay / Magic)
-      if (isConnected && wagmiAddress) {
-        return (await writeContractAsync({
+      const signWithLocalWallet = async () => {
+        if (!sessionEmail || !localAccount) {
+          throw new Error(
+            "No signing wallet. Sign in with email, Google (Magic), or open in MiniPay."
+          );
+        }
+        setWalletAddress(localAccount.address);
+
+        const chain = chainFor(chainId);
+        const rpc = RPC[chainId] || chain.rpcUrls.default.http[0];
+        const walletClient = createWalletClient({
+          account: localAccount,
+          chain,
+          transport: http(rpc),
+        });
+        const publicClient = createPublicClient({
+          chain,
+          transport: http(rpc),
+        });
+
+        const hash = await walletClient.writeContract({
           address: PAINTADOM_GAME_ADDRESS,
           abi: paintadomGameAbi,
           functionName: args.functionName,
           args: args.args as never,
-          chainId,
-          account: wagmiAddress,
-        })) as Hex;
+          chain,
+          account: localAccount,
+        });
+
+        try {
+          await publicClient.waitForTransactionReceipt({ hash, timeout: 60_000 });
+        } catch {
+          /* still return hash */
+        }
+
+        return hash;
+      };
+
+      // Email-login local wallet — skip Magic RPC when it's the registered player address
+      const useLocalFirst =
+        localAccount &&
+        storedWallet &&
+        localAccount.address.toLowerCase() === storedWallet.toLowerCase();
+
+      if (useLocalFirst) {
+        return signWithLocalWallet();
       }
 
-      // Email login wallet — signs locally (this is the address shown after email OTP)
-      const sessionEmail = getEmailWalletSession() || email?.trim().toLowerCase();
-      if (!sessionEmail) {
-        throw new Error(
-          "No signing wallet. Sign in with email, Google (Magic), or open in MiniPay."
-        );
+      // Prefer live wagmi connection (MiniPay / Magic)
+      if (isConnected && wagmiAddress) {
+        try {
+          return (await writeContractAsync({
+            address: PAINTADOM_GAME_ADDRESS,
+            abi: paintadomGameAbi,
+            functionName: args.functionName,
+            args: args.args as never,
+            chainId,
+            account: wagmiAddress,
+          })) as Hex;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          const magicFailed = /magic rpc|failed to fetch|-32603/i.test(msg);
+          const canUseLocal =
+            localAccount &&
+            localAccount.address.toLowerCase() === wagmiAddress.toLowerCase();
+          if (magicFailed && canUseLocal) {
+            return signWithLocalWallet();
+          }
+          throw e;
+        }
       }
 
-      const account = accountFromEmail(sessionEmail);
-      setWalletAddress(account.address);
-
-      const chain = chainFor(chainId);
-      const rpc = RPC[chainId] || chain.rpcUrls.default.http[0];
-      const walletClient = createWalletClient({
-        account,
-        chain,
-        transport: http(rpc),
-      });
-      const publicClient = createPublicClient({
-        chain,
-        transport: http(rpc),
-      });
-
-      const hash = await walletClient.writeContract({
-        address: PAINTADOM_GAME_ADDRESS,
-        abi: paintadomGameAbi,
-        functionName: args.functionName,
-        args: args.args as never,
-        chain,
-        account,
-      });
-
-      // Wait briefly so balance reads are fresh
-      try {
-        await publicClient.waitForTransactionReceipt({ hash, timeout: 60_000 });
-      } catch {
-        /* still return hash — sync may catch up */
-      }
-
-      return hash;
+      return signWithLocalWallet();
     },
     [
       chainId,
@@ -208,6 +235,7 @@ export function useChainEconomy() {
       setWalletAddress,
       wagmiAddress,
       writeContractAsync,
+      storedWallet,
     ]
   );
 

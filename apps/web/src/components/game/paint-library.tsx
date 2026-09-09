@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { pagesForLevel, totalPaintSparks, totalGalleryCost, FREESTYLE_DRAWINGS } from "@/data/pages";
+import { pagesForLevel, totalPaintSparks, totalGalleryCost, FREESTYLE_DRAWINGS, getDrawingCatalog } from "@/data/pages";
 import { useGameStore } from "@/store/game-store";
 import { GameIcon } from "@/components/ui/game-icon";
 import { useNavLoading } from "@/store/nav-loading";
@@ -20,8 +20,11 @@ export function PaintLibrary() {
   const done = pages.filter((p) => pageProgress[p.id]?.completed).length;
   const paintTotal = totalPaintSparks(level);
   const galleryTotal = totalGalleryCost(level);
-  const startNavLoading = useNavLoading((s) => s.start);
+  const catalog = getDrawingCatalog();
+  const metaForPage = (pageId: string) =>
+    catalog.find((c) => pageId.endsWith(`-${c.slug}`));
   const stopNavLoading = useNavLoading((s) => s.stop);
+  const startNavLoading = useNavLoading((s) => s.start);
 
   useEffect(() => {
     stopNavLoading();
@@ -99,8 +102,8 @@ export function PaintLibrary() {
       {tab === "level" ? (
         <>
           <p className="px-4 text-xs font-bold text-ink/70">
-            Level {level} · {done}/{pages.length} completed · Paint all drawings
-            to progress · ~{paintTotal} Sparks (wall needs {galleryTotal})
+            Level {level} · {done}/{pages.length} completed · Nature & lifestyle
+            scenes · ~{paintTotal} Sparks (wall needs {galleryTotal})
           </p>
           <div className="grid grid-cols-2 gap-3 px-4 pb-12 pt-2">
             {pages.map((page, i) => {
@@ -109,6 +112,7 @@ export function PaintLibrary() {
               const completed = Boolean(
                 progress?.completed && (progress?.percent ?? 0) >= 100
               );
+              const meta = metaForPage(page.id);
               return (
                 <Link
                   key={page.id}
@@ -116,13 +120,24 @@ export function PaintLibrary() {
                   onClick={() => startNavLoading("Opening paint room…")}
                   className="panel-3d overflow-hidden !p-0 transition active:translate-y-1"
                 >
-                  <div className="relative aspect-[4/5] bg-white p-2">
-                    {/* Stroke-only preview */}
+                  <div className="relative aspect-[4/5] overflow-hidden bg-white">
+                    {progress?.canvasData &&
+                    !completed &&
+                    !progress.canvasData.startsWith("data:image/jpeg") ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={progress.canvasData}
+                        alt={page.title}
+                        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-contain object-center"
+                        loading="lazy"
+                      />
+                    ) : null}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={page.lineArt || page.thumbnail}
-                      alt={page.title}
-                      className="h-full w-full object-contain"
+                      alt=""
+                      aria-hidden
+                      className="absolute inset-0 z-10 h-full w-full object-contain object-center"
                       loading="lazy"
                     />
                     <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-black text-white">
@@ -138,8 +153,9 @@ export function PaintLibrary() {
                   </div>
                   <div className="p-3">
                     <p className="text-sm font-bold text-ink">{page.title}</p>
-                    <p className="flex items-center gap-1 text-[11px] font-bold capitalize text-ink/50">
-                      {page.difficulty} · +{page.sparksReward}{" "}
+                    <p className="flex flex-wrap items-center gap-1 text-[11px] font-bold capitalize text-ink/50">
+                      {page.difficulty}
+                      {meta ? ` · ~${meta.estMinutes} min` : ""} · +{page.sparksReward}{" "}
                       <GameIcon src="/icons/sparks.webp" size={12} />
                     </p>
                     {progress && !completed && (
@@ -170,12 +186,12 @@ export function PaintLibrary() {
                 onClick={() => startNavLoading("Opening paint room…")}
                 className="panel-3d overflow-hidden !p-0 transition active:translate-y-1"
               >
-                <div className="relative aspect-[4/5] bg-white p-2">
+                <div className="relative aspect-[4/5] overflow-hidden bg-white">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={d.lineArt}
                     alt={d.title}
-                    className="h-full w-full object-contain"
+                    className="absolute inset-0 h-full w-full object-contain object-center"
                     loading="lazy"
                   />
                   <span className="absolute left-2 top-2 rounded-full bg-cyan-600 px-2 py-0.5 text-[10px] font-black text-white">
@@ -185,7 +201,11 @@ export function PaintLibrary() {
                 <div className="p-3">
                   <p className="text-sm font-bold text-ink">{d.title}</p>
                   <p className="text-[11px] font-bold capitalize text-ink/50">
-                    {d.difficulty} · no rewards
+                    {d.difficulty}
+                    {"estMinutes" in d && d.estMinutes
+                      ? ` · ~${d.estMinutes} min`
+                      : ""}{" "}
+                    · no rewards
                   </p>
                 </div>
               </Link>

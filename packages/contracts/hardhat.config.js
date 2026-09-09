@@ -23,7 +23,7 @@ module.exports = {
   networks: {
     hardhat: {},
     celoSepolia: {
-      url: process.env.CELO_SEPOLIA_RPC || "https://forno.celo-sepolia.celo-testnet.org",
+      url: process.env.CELO_SEPOLIA_RPC || "https://rpc.ankr.com/celo_sepolia",
       chainId: 11142220,
       accounts,
     },

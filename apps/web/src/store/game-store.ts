@@ -63,6 +63,8 @@ interface GameStore extends PlayerState {
     completedLevel?: number;
     cost?: number;
   };
+  /** Apply pending level after level-up gifts are signed & claimed */
+  confirmLevelAdvance: () => boolean;
   /** Effective spark cost after temporary ad discount */
   frameCost: (baseCost: number) => number;
   claimGoal: (goalId: string) => number | null;
@@ -95,6 +97,8 @@ interface GameStore extends PlayerState {
   setMusicEnabled: (v: boolean) => void;
   setLanguage: (lang: string) => void;
   registerInviteSuccess: () => { sparks: number; gDollars: number } | null;
+  /** Wipe all progress and return to onboarding */
+  resetGame: (opts?: { keepSettings?: boolean }) => void;
 }
 
 const challengeDefaults = {
@@ -150,8 +154,24 @@ const initialState: PlayerState & { hasOnboarded: boolean } = {
   inviteCount: 0,
   accuracySum: 0,
   accuracySamples: 0,
+  pendingLevelAdvance: null,
   ...challengeDefaults,
 };
+
+function createFreshState(): PlayerState & { hasOnboarded: boolean } {
+  return {
+    ...initialState,
+    dailyRewards: DEFAULT_DAILY_REWARDS.map((r) => ({ ...r, claimed: false })),
+    achievements: DEFAULT_ACHIEVEMENTS.map((a) => ({ ...a, unlocked: false })),
+    goals: freshGoals(),
+    buildingStages: {},
+    pageProgress: {},
+    puzzleUnlocked: {},
+    tournamentJoined: {},
+    tournamentScore: {},
+    pendingLevelAdvance: null,
+  };
+}
 
 function bumpGoal(
   goals: PlayerState["goals"],
@@ -414,13 +434,9 @@ export const useGameStore = create<GameStore>()(
         const hung = hungFramesCount(gallery, nextStages);
         const total = totalFrames(gallery);
         const complete = hung >= total;
-        let nextLevel = prevLevel;
-        let stagesReset = nextStages;
         let advanced = false;
 
         if (complete && prevLevel < GALLERIES.length) {
-          nextLevel = prevLevel + 1;
-          stagesReset = {};
           advanced = true;
         }
 
@@ -431,16 +447,18 @@ export const useGameStore = create<GameStore>()(
 
         set({
           sparks: skipDeduct ? get().sparks : get().sparks - cost,
-          buildingStages: stagesReset,
-          level: nextLevel,
+          buildingStages: nextStages,
           stagesBuiltToday: get().stagesBuiltToday + 1,
           tournamentScore: tourBoost,
           goals: bumpGoal(get().goals, "stages", 1),
           achievements: get().achievements.map((a) =>
-            a.id === "kingdom-builder" && (complete || advanced)
+            a.id === "kingdom-builder" && complete
               ? { ...a, unlocked: true }
               : a
           ),
+          ...(advanced
+            ? { pendingLevelAdvance: prevLevel + 1 }
+            : {}),
         });
 
         return {
@@ -449,6 +467,17 @@ export const useGameStore = create<GameStore>()(
           completedLevel: complete ? prevLevel : undefined,
           cost,
         };
+      },
+
+      confirmLevelAdvance: () => {
+        const next = get().pendingLevelAdvance;
+        if (!next || next <= get().level) return false;
+        set({
+          level: next,
+          buildingStages: {},
+          pendingLevelAdvance: null,
+        });
+        return true;
       },
 
       claimGoal: (goalId) => {
@@ -684,6 +713,21 @@ export const useGameStore = create<GameStore>()(
         const total = totalFrames(gallery);
         return { built, total, pct: Math.round((built / total) * 100) };
       },
+
+      resetGame: (opts) => {
+        const keepSettings = opts?.keepSettings ?? true;
+        const soundEnabled = keepSettings ? get().soundEnabled : true;
+        const musicEnabled = keepSettings ? get().musicEnabled : true;
+        const language = keepSettings ? get().language : "en";
+        setEmailWalletSession(undefined);
+        set({
+          ...createFreshState(),
+          hydrated: true,
+          soundEnabled,
+          musicEnabled,
+          language,
+        });
+      },
     }),
     {
       name: "paintadom-game-v8",
@@ -754,6 +798,7 @@ export const useGameStore = create<GameStore>()(
           inviteCount: p.inviteCount ?? 0,
           accuracySum: p.accuracySum ?? 0,
           accuracySamples: p.accuracySamples ?? 0,
+          pendingLevelAdvance: p.pendingLevelAdvance ?? null,
           email: p.email,
           walletAddress: p.walletAddress,
         } as GameStore;

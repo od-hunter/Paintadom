@@ -8,8 +8,10 @@ import { GameMenu } from "@/components/layout/game-menu";
 import { SparkShop } from "@/components/game/spark-shop";
 import { NewsPopup } from "@/components/game/news-popup";
 import { LevelMapPopup } from "@/components/game/level-map-popup";
+import { WalletModal } from "@/components/game/wallet-modal";
 import { shortAddress } from "@/lib/wallet-from-email";
 import { getAvatar } from "@/data/buildings";
+import { useAccount } from "wagmi";
 
 /** Top HUD — Sparks + wallet address bars (Dice Dreams style). */
 export function AppHeader() {
@@ -19,7 +21,9 @@ export function AppHeader() {
   const [newsOpen, setNewsOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [walletMenuOpen, setWalletMenuOpen] = useState(false);
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
   const walletMenuRef = useRef<HTMLDivElement>(null);
+  const { isConnected: isWagmiConnected } = useAccount();
   const sparks = useGameStore((s) => s.sparks);
   const goodDollars = useGameStore((s) => s.goodDollars);
   const level = useGameStore((s) => s.level);
@@ -138,7 +142,9 @@ export function AppHeader() {
                 </span>
                 <div className="relative mx-1 min-w-0 flex-1 text-center">
                   <p className="truncate font-mono text-[10px] font-black text-white drop-shadow">
-                    {shortAddress(walletAddress)}
+                    {isWagmiConnected || walletAddress
+                      ? shortAddress(walletAddress)
+                      : "Connect"}
                   </p>
                   <p className="text-[8px] font-bold text-violet-100">
                     {goodDollars.toLocaleString()} G$
@@ -206,6 +212,22 @@ export function AppHeader() {
                           </p>
                         </div>
                       </div>
+                      <div className="border-t border-violet-100 px-3 py-2.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWalletMenuOpen(false);
+                            setWalletModalOpen(true);
+                          }}
+                          className={`w-full rounded-xl border-2 py-2.5 text-xs font-black ${
+                            isWagmiConnected
+                              ? "border-violet-200 bg-violet-50 text-violet-900"
+                              : "border-white bg-gradient-to-b from-lime-300 to-green-500 text-green-950 shadow-[0_3px_0_#15803d]"
+                          }`}
+                        >
+                          {isWagmiConnected ? "Manage wallet" : "Connect wallet"}
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -247,6 +269,10 @@ export function AppHeader() {
         open={mapOpen}
         onClose={() => setMapOpen(false)}
         playerLevel={level}
+      />
+      <WalletModal
+        open={walletModalOpen}
+        onClose={() => setWalletModalOpen(false)}
       />
     </>
   );

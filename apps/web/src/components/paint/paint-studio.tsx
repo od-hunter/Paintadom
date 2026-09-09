@@ -95,6 +95,20 @@ const PALETTE = [
 const CANVAS_W = 800;
 const CANVAS_H = 1000;
 
+/** PNG preserves transparency — JPEG turns unpainted canvas areas black */
+function canvasToSaveData(canvas: HTMLCanvasElement): string {
+  try {
+    return canvas.toDataURL("image/png");
+  } catch {
+    return "";
+  }
+}
+
+/** Older saves used JPEG and rendered as a black rectangle in previews */
+function isLegacyJpegSave(data?: string) {
+  return Boolean(data?.startsWith("data:image/jpeg"));
+}
+
 type Tool = "brush" | "eraser";
 
 interface PaintStudioProps {
@@ -241,16 +255,36 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
   }, []);
 
   const persist = useCallback(() => {
-    if (freestyle) return; // no progress tracking
+    if (freestyle) return;
     const canvas = paintRef.current;
     if (!canvas) return;
-    const dataUrl = canvas.toDataURL("image/png");
-    const nextPercent = estimatePercent();
-    setPercent(nextPercent);
-    savePageProgress(page.id, nextPercent, dataUrl);
-    setSavedFlash(true);
-    window.setTimeout(() => setSavedFlash(false), 1200);
+    try {
+      const dataUrl = canvasToSaveData(canvas);
+      const nextPercent = estimatePercent();
+      setPercent(nextPercent);
+      savePageProgress(page.id, nextPercent, dataUrl);
+      setSavedFlash(true);
+      window.setTimeout(() => setSavedFlash(false), 1200);
+    } catch {
+      /* quota / export errors — keep painting */
+    }
   }, [estimatePercent, page.id, savePageProgress, freestyle]);
+
+  const persistRef = useRef(persist);
+  const saveTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    persistRef.current = persist;
+  }, [persist]);
+
+  /** Save shortly after each stroke so progress isn't lost on mobile */
+  const schedulePersist = useCallback(() => {
+    if (freestyle) return;
+    if (saveTimerRef.current != null) window.clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(() => {
+      saveTimerRef.current = null;
+      persistRef.current();
+    }, 400);
+  }, [freestyle]);
 
   useEffect(() => {
     const canvas = paintRef.current;
@@ -260,9 +294,10 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-    if (existing?.canvasData) {
+    if (existing?.canvasData && !isLegacyJpegSave(existing.canvasData)) {
       const img = new Image();
       img.onload = () => {
         ctx.drawImage(img, 0, 0);
@@ -282,9 +317,27 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
     const id = window.setInterval(() => {
       if (drawingRef.current) return;
       persist();
-    }, 10000);
+    }, 8000);
     return () => window.clearInterval(id);
   }, [persist]);
+
+  /** Flush saved progress when the tab closes or goes to background */
+  useEffect(() => {
+    if (freestyle) return;
+    const flush = () => {
+      if (saveTimerRef.current != null) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      persistRef.current();
+    };
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", flush);
+    };
+  }, [freestyle]);
 
   const getCanvasPoint = (clientX: number, clientY: number) => {
     const canvas = paintRef.current;
@@ -411,6 +464,7 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
       lastPointRef.current = null;
       pushHistory();
       setPercent(estimatePercent());
+      schedulePersist();
     }
 
     if (pointersRef.current.size < 2) {
@@ -442,6 +496,7 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
     historyIndexRef.current -= 1;
     ctx.putImageData(historyRef.current[historyIndexRef.current], 0, 0);
     setPercent(estimatePercent());
+    schedulePersist();
   };
 
   const redo = () => {
@@ -452,6 +507,7 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
     historyIndexRef.current += 1;
     ctx.putImageData(historyRef.current[historyIndexRef.current], 0, 0);
     setPercent(estimatePercent());
+    schedulePersist();
   };
 
   const leaveToBook = () => {
@@ -478,9 +534,13 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
     const pct = estimatePercent();
     setPercent(pct);
 
-    const canvas = paintRef.current;
-    if (canvas) {
-      savePageProgress(page.id, pct, canvas.toDataURL("image/png"));
+    try {
+      const canvas = paintRef.current;
+      if (canvas) {
+        savePageProgress(page.id, pct, canvasToSaveData(canvas));
+      }
+    } catch {
+      /* still show exit modal */
     }
 
     if (pct >= 100) {
@@ -496,13 +556,7 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
   };
 
   const continueLater = () => {
-    // Local save only — no wallet signature
-    const pct = estimatePercent();
-    setPercent(pct);
-    const canvas = paintRef.current;
-    if (canvas) {
-      savePageProgress(page.id, pct, canvas.toDataURL("image/png"));
-    }
+    // Progress already saved when the exit modal opened
     setExitPhase(null);
     leaveToBook();
   };
@@ -516,7 +570,7 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
       setExitPhase("incomplete");
       return;
     }
-    const dataUrl = paintRef.current?.toDataURL("image/png") ?? "";
+    const dataUrl = paintRef.current ? canvasToSaveData(paintRef.current) : "";
     savePageProgress(page.id, 100, dataUrl);
 
     const result = completePage(page.id);
@@ -650,7 +704,7 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
                         savePageProgress(
                           page.id,
                           pct,
-                          canvas.toDataURL("image/png")
+                          canvasToSaveData(canvas)
                         );
                       }
                       setExitPhase(null);
@@ -751,7 +805,7 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
 
       <div
         ref={viewportRef}
-        className="relative flex-1 touch-none overflow-hidden bg-[#0B1220]"
+        className="relative flex-1 touch-none overflow-hidden bg-gradient-to-b from-sky-200/90 via-violet-100/90 to-pink-100/90"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -763,10 +817,11 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
           className="absolute left-1/2 top-1/2 origin-center will-change-transform"
           style={{
             transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${scale})`,
-            width: "min(92vw, 420px)",
+            width: "min(92vw, calc((100dvh - 11rem) * 0.8))",
+            maxWidth: "440px",
           }}
         >
-          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-white/10">
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-white shadow-2xl ring-2 ring-white/80">
             <canvas
               ref={paintRef}
               className="absolute inset-0 h-full w-full"
@@ -778,7 +833,7 @@ export function PaintStudio({ page, freestyle = false }: PaintStudioProps) {
                 src={page.lineArt}
                 alt=""
                 draggable={false}
-                className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+                className="pointer-events-none absolute inset-0 z-10 h-full w-full object-contain object-center"
               />
             )}
           </div>

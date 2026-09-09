@@ -148,4 +148,6 @@ export interface PlayerState {
   tournamentJoined: Record<string, boolean>;
   tournamentScore: Record<string, number>;
   lastStreakClaimDate: string;
+  /** Next level unlocked after wing complete — applied only after Sign & claim flow */
+  pendingLevelAdvance: number | null;
 }

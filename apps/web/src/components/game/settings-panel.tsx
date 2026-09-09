@@ -9,6 +9,7 @@ import {
   unlockAudio,
 } from "@/lib/audio";
 import { useOnChainClaim } from "@/hooks/use-on-chain-claim";
+import { WalletModal } from "@/components/game/wallet-modal";
 import { useAccount, useChainId } from "wagmi";
 import { celo, celoSepolia } from "viem/chains";
 
@@ -212,6 +213,9 @@ export function SettingsPanel({
   const setSound = useGameStore((s) => s.setSoundEnabled);
   const setMusic = useGameStore((s) => s.setMusicEnabled);
   const setLanguage = useGameStore((s) => s.setLanguage);
+  const resetGame = useGameStore((s) => s.resetGame);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -294,7 +298,60 @@ export function SettingsPanel({
 
           <div className="my-2 h-1 rounded-full bg-white/40" />
 
+          <button
+            type="button"
+            onClick={() => {
+              playSfx("tap", soundEnabled);
+              setWalletModalOpen(true);
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-[3px] border-white bg-gradient-to-b from-violet-300 to-purple-700 py-3 font-display text-base font-black text-white shadow-[0_5px_0_#5b21b6]"
+          >
+            👛 Wallet
+          </button>
+
           <CeloChainSettings soundEnabled={soundEnabled} />
+
+          <button
+            type="button"
+            onClick={() => {
+              playSfx("tap", soundEnabled);
+              setConfirmReset(true);
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-[3px] border-white bg-gradient-to-b from-rose-300 to-red-600 py-3 font-display text-base font-black text-white shadow-[0_5px_0_#991b1b]"
+          >
+            ↺ Start over
+          </button>
+
+          {confirmReset && (
+            <div className="space-y-2 rounded-2xl border-[3px] border-white bg-black/25 p-3">
+              <p className="text-center text-xs font-bold text-white">
+                Erase all progress, Sparks, gallery art, and drawings? You&apos;ll
+                go back to the welcome screen.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmReset(false)}
+                  className="rounded-xl border-2 border-white bg-white/20 py-2 text-xs font-black text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetGame();
+                    playSfx("claim", soundEnabled);
+                    setConfirmReset(false);
+                    onClose();
+                    window.location.href = "/";
+                  }}
+                  className="rounded-xl border-2 border-white bg-red-600 py-2 text-xs font-black text-white"
+                >
+                  Yes, reset
+                </button>
+              </div>
+            </div>
+          )}
 
           <a
             href="mailto:support@paintadom.app"
@@ -338,6 +395,10 @@ export function SettingsPanel({
           </div>
         </div>
       </div>
+      <WalletModal
+        open={walletModalOpen}
+        onClose={() => setWalletModalOpen(false)}
+      />
     </CenteredModal>
   );
 }

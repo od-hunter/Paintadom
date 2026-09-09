@@ -36,6 +36,7 @@ export function HomeScreen() {
   const [levelUp, setLevelUp] = useState<{
     completed: number;
     next: number;
+    resume?: boolean;
   } | null>(null);
 
   const level = useGameStore((s) => s.level);
@@ -46,6 +47,7 @@ export function HomeScreen() {
   const touchDailyActivity = useGameStore((s) => s.touchDailyActivity);
   const refreshExpiredGoals = useGameStore((s) => s.refreshExpiredGoals);
   const markHomeEntered = useGameStore((s) => s.markHomeEntered);
+  const pendingLevelAdvance = useGameStore((s) => s.pendingLevelAdvance);
 
   useEffect(() => {
     stopNavLoading();
@@ -53,6 +55,17 @@ export function HomeScreen() {
     refreshExpiredGoals();
     markHomeEntered();
   }, [stopNavLoading, touchDailyActivity, refreshExpiredGoals, markHomeEntered]);
+
+  /** Resume level-up claim flow if user refreshed before finishing */
+  useEffect(() => {
+    if (pendingLevelAdvance && !levelUp) {
+      setLevelUp({
+        completed: pendingLevelAdvance - 1,
+        next: pendingLevelAdvance,
+        resume: true,
+      });
+    }
+  }, [pendingLevelAdvance, levelUp]);
 
   /** Prefetch paint studio so Drawing Book / Play opens quickly */
   useEffect(() => {
@@ -328,6 +341,7 @@ export function HomeScreen() {
         open={!!levelUp}
         completedLevel={levelUp?.completed ?? 1}
         nextLevel={levelUp?.next ?? 2}
+        startAtMap={levelUp?.resume}
         onFinished={() => setLevelUp(null)}
       />
       </div>
